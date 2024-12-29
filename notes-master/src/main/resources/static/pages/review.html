@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>错题测试</title>
+    <style>
+        .myLabel{
+            width: 120px;
+        }
+        .myContent{
+
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <el-main>
+        <el-form :inline="true" :model="formInLine" class="demo-form-inline">
+            <el-form-item>
+                <el-select placeholder="错题本名" v-model="bookname">
+                    <el-option :label="bookname" :value="bookname" v-for="bookname in  booksname" :key="bookname"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item>
+                <el-button type="primary" @click="search">查询</el-button>
+                <el-button type="primary" @click="shengcheng">生成试卷</el-button>
+            </el-form-item>
+        </el-form>
+
+
+        <el-table :data="reviews" style="width: 100%" stripe>
+            <el-table-column prop="notesId" label="错题编号" align="center" width="140">
+            </el-table-column>
+            <el-table-column prop="notesTitle" label="标题" align="center">
+            </el-table-column>
+            <el-table-column prop="priority" label="优先级" align="center"  width="200">
+            </el-table-column>
+            <el-table-column prop="proficiency" label="熟练度" align="center"  width="200">
+            </el-table-column>
+            <el-table-column prop="notesGroup" label="标签" align="center"  width="180">
+            </el-table-column>
+            <el-table-column prop="updateTime" label="更新时间" align="center"  width="200">
+            </el-table-column>
+            <el-table-column label="操作" align="center" width="280">
+                <template slot-scope="scope">
+                    <el-button type="success" size="mini" @click="detail(scope.row)">查看</el-button>
+                    <el-button type="primary" size="mini" @click="editNotes(scope.row)">测试</el-button>
+                    <el-button type="danger" size="mini" @click="deleteBook(scope.row)">删除</el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+
+        <!--分页工具条-->
+        <el-pagination
+                @size-change="handleSizeChange"
+                @current-change="handleCurrentChange"
+                :current-page="pagination.currentPage"
+                :page-sizes="[5, 10, 15]"
+                :page-size="5"
+                layout="total, sizes, prev, pager, next, jumper"
+                :total="pagination.total">
+        </el-pagination>
+
+    </el-main>
+
+
+</div>
+<script src="../js/vue.js"></script>
+<script src="../js/index.js"></script>
+<script type="text/javascript" src="../js/jquery.min.js"></script>
+<script src="../js/axios-0.18.0.js"></script>
+<link rel="stylesheet" href="../plugins/elementui/index.css">
+<link rel="stylesheet" href="../css/elementui/index.css">
+<script src="../plugins/elementui/index.js"></script>
+<script src="../js/elementui/index.js"></script>
+<script>
+    const vue = new Vue({
+        el: "#app",
+        data: {
+            onlineUser: null,
+            bookname:"",
+            reviews: [],
+            booksname:[],
+            detailFrom:{
+                title:"",
+                content:"",
+                reviewTime:"",
+                status:"",
+                num:0
+            },
+
+            // 当前页码
+            pagination: {
+                currentPage: 1,
+                pageSize: 5,
+                total: 0
+            },
+            dialogVisible4Add:false,
+            dialogVisible4Detail:false,
+            reviewFormData:{}
+        },
+        //钩子函数，VUE对象初始化完成后自动执行 /*OK*/
+        created() {
+            //调用查询全部
+            this.onlineUser = window.parent.getOnlineUser();
+            this.getAllNotes();
+            this.getBooks();
+        },
+        methods: {
+
+            //查询所有错题
+            getAllNotes() {
+                axios.post('/text/getText/'+this.pagination.currentPage+'/'+this.pagination.pageSize, {
+                    account: this.onlineUser.account,
+                    condition: {},
+                    order: 0,
+                    orderCondition: ""
+                }).then(r => {
+                    this.pagination.currentPage = r.data.current;
+                    this.pagination.pageSize = r.data.size;
+                    this.pagination.total = r.data.total;
+                    this.reviews = r.data.records;
+                })
+            },
+            //查看
+            detail(row) {
+                axios.get('/notes/increaseProficiency/'+row.notesId).then(res=>{
+                    this.getAllNotes();
+                });
+                localStorage.setItem('curRowId', row.notesId)
+                location.href = "http://localhost:8080/pages/textDetail.html"
+            },
+            //条件查询错题
+            getNotes() {
+                axios.post(`/getBook/${this.pagination.currentPage}/${this.pagination.pageSize}`, {
+                    account: this.onlineUser.account,
+                    condition: {
+                        errorbookName:this.bookname
+                    },
+                    order: 0,
+                    orderCondition: ""
+                }).then(r => {
+                    this.pagination.currentPage = r.data.current;
+                    this.pagination.pageSize = r.data.size;
+                    this.pagination.total = r.data.total;
+                    this.reviews = r.data.records;
+                })
+            },
+
+            // 编辑单个错题
+            editNotes(row) {
+                localStorage.setItem('curRowId', row.notesId)
+                location.href = 'http://localhost:8080/pages/text.html'
+            },
+            //生成试卷
+            shengcheng(row) {
+                localStorage.setItem('curRowId', row.notesId)
+                location.href = 'http://localhost:8080/pages/exam.html'
+            },
+
+
+
+            //获取所有组
+            getBooks(){
+                axios.get('/getBook/'+this.onlineUser.account).then(res =>{
+                    this.booksname = res.data
+                    console.log(this.booksname)
+                })
+            },
+
+
+            search(){
+                this.pagination.currentPage = 1
+                this.getNotes();
+            },
+
+            <!--分页-->
+            handleSizeChange(val) { //切换当前页显示条数
+                this.pagination.pageSize = val;
+                this.getNotes();
+            },
+            handleCurrentChange(val) { //切换页码值
+                this.pagination.currentPage = val;
+                this.getNotes();
+            },
+
+            //复选框选中后执行的方法 /*OK*/
+            handleSelectionChange(val) {
+                this.multipleSelection = val;
+            },
+
+            // 清空搜索词
+            resetFormInLine() {
+                this.formInLine.tag = '';
+                this.formInLine.priority = '';
+                this.formInLine.content = '';
+            },
+            //移除
+            deleteBook(row) {
+                //弹出警告框,让用户进行二次确认
+                this.$confirm('确认移除这个错题吗?', 'Tips', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    //ajax发送批量删除请求
+                    axios.delete('/deleteBook/' + row.notesId).then((res) => {
+                        if (res.data) {
+                            this.$message({
+                                message:"移除成功 ",
+                                duration:1000,
+                                type:'success'
+                            })
+                        } else {
+                            this.$message({
+                                message:"移除失败 ",
+                                duration:1000,
+                                type:'error'
+                            })
+                        }
+                    }).finally(() => {
+                        this.getNotes()
+                    });
+                }).catch(() => {
+                    this.$message({
+                        message:"已取消操作 ",
+                        duration:1000,
+                        type:'info'
+                    })
+                })
+            },
+        },
+
+    });
+</script>
+</body>
+</html>

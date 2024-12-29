@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试试卷</title>
+
+    <!-- 引入Element UI的CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-ui@2.15.8/lib/theme-chalk/index.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <!-- 引入Vue和Element UI的JS -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/element-ui@2.15.8/lib/index.js"></script>
+    <script src="../js/vue.js"></script>
+    <script src="../js/index.js"></script>
+    <script type="text/javascript" src="../js/jquery.min.js"></script>
+    <script src="../js/axios-0.18.0.js"></script>
+    <link rel="stylesheet" href="../css/notes.css">
+    <link rel="stylesheet" href="../plugins/elementui/index.css">
+    <script src="../plugins/elementui/index.js"></script>
+    <style>
+        /* 页面背景和整体布局 */
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #f4f7fa;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* 主容器的最大宽度和高度，保证自适应 */
+        .container {
+            width: 90%;  /* 宽度占视口的90% */
+            max-width: 960px;  /* 最大宽度为960px */
+            height: 80vh;  /* 高度占视口的80% */
+            background: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            padding: 30px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        /* 标题样式 */
+        h2 {
+            font-size: 24px;
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: bold;
+        }
+
+        /* 问题卡片的底部间距 */
+        .mb-4 {
+            margin-bottom: 20px;
+        }
+
+        /* 卡片样式 */
+        .el-card {
+            background-color: #fafafa;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 问题标题 */
+        .el-card h3 {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        /* 输入框样式 */
+        .el-input {
+            border-radius: 6px;
+            padding: 10px;
+        }
+
+        /* 按钮样式 */
+        .el-button {
+            border-radius: 5px;
+        }
+
+        /* 按钮悬停状态 */
+        .el-button:hover {
+            background-color: #409EFF;
+            border-color: #409EFF;
+        }
+
+        .el-button {
+            background-color: #20a8d8;
+            color: #fff;
+            margin-top: 10px;
+        }
+
+        /* 禁用按钮样式 */
+        .el-button:disabled {
+            background-color: #ccc;
+            color: #999;
+        }
+
+        /* 答案显示框 */
+        .answer-box {
+            margin-top: 10px;
+            color: #409EFF;
+            font-weight: bold;
+        }
+
+        /* 提交按钮 */
+        .submit-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 15px 30px;
+            background-color: #20a8d8;
+            color: #fff;
+            border-radius: 50px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* 提交按钮悬停 */
+        .submit-btn:hover {
+            background-color: #17a2b8;
+        }
+
+        /* 加载动画 */
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #409EFF;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 2s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* 提交按钮样式 */
+        .submit-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 15px 30px;
+            background-color: #20a8d8;
+            color: #fff;
+            border-radius: 50px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .submit-btn:hover {
+            background-color: #17a2b8;
+        }
+
+        /* 弹框内的内容 */
+        .answer-item {
+            margin-bottom: 20px;
+        }
+
+        /* 每道题的标题 */
+        .question-title {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        /* 用户答案与正确答案的对比 */
+        .answer-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        /* 左侧是用户答案 */
+        .answer-item-left {
+            width: 45%;
+        }
+
+        /* 右侧是正确答案 */
+        .answer-item-right {
+            width: 45%;
+            text-align: right;
+        }
+
+        /* 用户答案的样式 */
+        .user-answer {
+            color: #20a8d8;  /* 用户答案颜色 */
+            font-weight: bold;
+        }
+
+        /* 正确答案的样式 */
+        .correct-answer {
+            color: #28a745;  /* 正确答案颜色 */
+            font-weight: bold;
+        }
+
+        /* 错误提示信息 */
+        .error-message {
+            color: #dc3545;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        /* 分割线 */
+        .el-divider {
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* 弹框按钮样式 */
+        .dialog-footer {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+    </style>
+</head>
+<body>
+<div id="app" class="container">
+    <h2>测试试卷
+        <el-form :inline="true" :model="bookname" class="demo-form-inline">
+            <el-form-item>
+                <el-select placeholder="错题本" v-model="bookname">
+                    <el-option :label="bookname" :value="bookname" v-for="bookname in booksname" :key="bookname"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item>
+            <el-button type="primary" @click="beginTest()" >确认作业本</el-button>
+            </el-form-item>
+        </el-form>
+    </h2>
+
+    <!-- Vue.js 渲染的错题列表 -->
+    <el-row :gutter="20">
+        <el-col v-for="(question, index) in questions" :key="index" :span="24" class="mb-4">
+            <el-card shadow="never">
+                <h3>错题 {{ index + 1 }}</h3>
+                <div><strong>错题内容：</strong>
+                        <div v-html="question.question"></div>
+                </div>
+
+                <!-- 答题框 -->
+                <el-input
+                        v-model="question.answer"
+                        :disabled="question.showAnswer"
+                        placeholder="请输入答案"
+                        style="margin-top: 15px;"
+                ></el-input>
+
+                <!-- 查看答案按钮 -->
+                <div style="margin-top: 15px;">
+                    <el-button
+                            type="info"
+                            @click="toggleAnswer(index)"
+                            :loading="loading"
+                            icon="el-icon-search"
+                    >
+                        {{ question.showAnswer ? '隐藏答案' : '查看答案' }}
+                    </el-button>
+                </div>
+
+                <!-- 显示正确答案 -->
+                <div v-if="question.showAnswer" class="answer-box" v-html="question.correctAnswer">
+                    <strong>正确答案：</strong>
+                </div>
+            </el-card>
+        </el-col>
+    </el-row>
+    <el-row style="margin-top: 20px; text-align: center;">
+        <el-col :span="12">
+            <el-button class="submit-btn" type="primary" @click="openSubmitDialog">
+                提交答案
+            </el-button>
+        </el-col>
+    </el-row>
+    <!-- 提交按钮下方添加返回按钮 -->
+    <el-row style="text-align: right; margin-right: 20px;">
+        <el-col>
+            <el-button @click="goBack" type="primary">
+                返回
+            </el-button>
+        </el-col>
+    </el-row>
+
+    <!-- 提交答案的弹框 -->
+    <el-dialog
+            title="提交答案"
+            :visible.sync="dialogVisible"
+            width="60%"
+            :before-close="handleClose"
+            center
+    >
+        <div v-for="(question, index) in questions" :key="index" class="answer-item">
+            <p class="question-title"><strong>错题 {{ index + 1 }}:</strong></p>
+
+            <!-- 用户答案与正确答案的对比 -->
+            <div class="answer-container">
+                <div class="answer-item-left">
+                    <p><strong>你的答案：</strong> <span class="user-answer">{{ question.answer }}</span></p>
+                </div>
+                <div class="answer-item-right">
+                    <p><strong>正确答案：</strong> <span class="correct-answer" v-html="question.correctAnswer"></span></p>
+                </div>
+            </div>
+
+            <!-- 若答案不一致，显示错误信息 -->
+            <p v-if="question.answer !== question.correctAnswer.replace(/<p>/g, '').replace(/<\/p>/g, '')" class="error-message">答案不一致，请重新查看。</p>
+            <p v-if="question.answer == question.correctAnswer.replace(/<p>/g, '').replace(/<\/p>/g, '')" class="error-message">恭喜你答对了</p>
+            <el-divider></el-divider>
+        </div>
+
+        <span slot="footer" class="dialog-footer">
+        <el-button @click="clean()">是否清除</el-button>
+        <el-button type="primary" @click="dialogVisible = false">确认</el-button>
+    </span>
+    </el-dialog>
+</div>
+
+<!-- Vue.js 脚本 -->
+<script>
+    new Vue({
+        el: '#app',
+        data: {
+            dialogVisible: false,
+            booksname:[],
+            bookname:"",
+            questions:[],
+             // 存储错题数据
+        },
+        created() {
+            this.onlineUser = window.parent.getOnlineUser();
+            this.getBooks();
+            // 模拟从数据库获取错题数据
+            // this.fetchQuestions();
+
+        },
+        methods: {
+            //返回按钮的功能
+            goBack(){
+                location.href = 'http://localhost:8080/pages/review.html'
+            },
+            // 显示提交答案的弹框
+            openSubmitDialog() {
+                this.dialogVisible = true;
+            },
+            // 切换答案的显示与隐藏
+            toggleAnswer(index) {
+                const question = this.questions[index];
+                question.loading = true;
+
+                setTimeout(() => {
+                    question.showAnswer = !question.showAnswer;
+                    question.loading = false;
+                }, 500);  // 模拟答案加载的延迟
+            },
+            // 提交答案
+            submitAnswers() {
+                let result = '';
+                this.questions.forEach((question, index) => {
+                    result += `错题 ${index + 1}: 你的答案是 "${question.answer}", 正确答案是 "${question.correctAnswer.replace(/<p>/g, '').replace(/<\/p>/g, '')}"\n`;
+                });
+
+                // 弹框已实现，移除原本的消息提示
+                this.openSubmitDialog();
+
+            },
+            //获取所有作业本的名字
+            getBooks(){
+                axios.get('/getBook/'+this.onlineUser.account).then(res =>{
+                    this.booksname = res.data
+                    console.log(this.booksname)
+                })
+            },
+            beginTest(){
+                axios.get('/text/getTest/'+this.onlineUser.account+"/"+this.bookname).then(res=>{
+                    console.log(res.data)
+                        this.questions =res.data
+                })
+            },
+            // 关闭弹框
+            handleClose(done) {
+                done();
+            },
+            clean(){
+                //弹出警告框,让用户进行二次确认
+                this.$confirm('确认删除这些错题吗?', 'Tips', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    //ajax发送批量删除请求
+                    axios.put('/text/clean/',this.questions).then((res) => {
+                            this.$message({
+                                message:"删除成功 ",
+                                duration:1000,
+                                type:'success'
+                            })
+                    })
+                }).catch(() => {
+                    this.$message({
+                        message:"已取消操作 ",
+                        duration:1000,
+                        type:'info'
+                    })
+                })
+            }
+        }
+    });
+</script>
+</body>
+</html>
